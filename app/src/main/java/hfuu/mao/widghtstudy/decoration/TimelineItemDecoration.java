@@ -8,46 +8,76 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-//时光轴的ItemDecoration
-public class TimelineItemDecoration extends RecyclerView.ItemDecoration {
+/**
+ * 创建者: mao
+ * 功能描述:RecyclerView item装饰器 时间轴效果
+ */
+public class TimelineDecoration extends RecyclerView.ItemDecoration {
 
-    private int mTopOffset=10;
-    private int mLeftOffset=70;
-    private Paint mPaint;
+    private int mLeftOffset;
+    private Paint mCirclePaint;
     private int mCircleRadius;
-    private int mSplitLineCorlor;
-    private Paint mSplitLinePaint;
+    private Paint mlinePaint;
+    //是否允许绘制最后一个item的线条
+    private boolean mLastLineVisibility=false;
 
-    public TimelineItemDecoration(){
-        this(10,90,20,Color.RED);
+    public TimelineDecoration(){
+        this(90,10);
     }
-    public TimelineItemDecoration(int topOffset,int leftOffset,int circleRadius,int corlor){
-        mTopOffset=topOffset;
+    public TimelineDecoration(int leftOffset,int circleRadius){
         mLeftOffset=leftOffset;
         mCircleRadius=circleRadius;
-        mPaint=new Paint();
-        mPaint.setAntiAlias(true);
-        mPaint.setColor(corlor);
+
+        initCirclePaint();
+        initLinePaint();
     }
+
+    //初始化绘制线条的画笔
+    private void initLinePaint() {
+        mlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mlinePaint.setStyle(Paint.Style.STROKE);
+        mlinePaint.setColor(Color.BLACK);
+        mlinePaint.setStrokeWidth(1);
+        PathEffect path = new DashPathEffect(new float[] { 6, 2}, 1);
+        mlinePaint.setPathEffect(path);
+    }
+
+    //初始化绘制圆的画笔
+    private void initCirclePaint() {
+        mCirclePaint=new Paint();
+        mCirclePaint.setAntiAlias(true);
+        mCirclePaint.setColor(Color.RED);
+    }
+
+    //设置绘制线条的画笔的颜色
+    public TimelineDecoration setLinePaintColor(int color){
+        mlinePaint.setColor(color);
+        return this;
+    }
+
+    //设置绘制线条的宽度
+    public TimelineDecoration setLinePaintStrokeWidth(float width){
+        mlinePaint.setStrokeWidth(width);
+        return this;
+    }
+
+    //设置绘制线条的画笔的虚线效果
+    public TimelineDecoration setLinePaintPathEffect(PathEffect path){
+        mlinePaint.setPathEffect(path);
+        return this;
+    }
+
+    public TimelineDecoration setLastLineVisibility(boolean visible){
+        mLastLineVisibility=visible;
+        return this;
+    }
+
     @Override
     public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
         super.getItemOffsets(outRect, view, parent, state);
-        if (parent.getChildAdapterPosition(view)==0){
-            outRect.top=0;
-        }
-        else {
-            outRect.top=mTopOffset;
-        }
+        outRect.top=0;
         outRect.left=mLeftOffset;
     }
-
-    public void setSplitLineCorlor(int corlor){
-        mSplitLineCorlor=corlor;
-        mSplitLinePaint=new Paint();
-        mSplitLinePaint.setColor(corlor);
-        mSplitLinePaint.setAntiAlias(true);
-    }
-
 
 
     @Override
@@ -56,33 +86,40 @@ public class TimelineItemDecoration extends RecyclerView.ItemDecoration {
         int count=parent.getChildCount();
         for (int i=0;i<count;i++){
             View child=parent.getChildAt(i);
-            int position=parent.getChildAdapterPosition(child);
-            int top=child.getTop()-mTopOffset;
-            if (position==0){
-                top=child.getTop();
-            }
+            RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
+
             int left=parent.getPaddingLeft();
-            int bottom=child.getBottom();
-            int dividerHeight=bottom-top;
+            int top=child.getTop()-params.topMargin;
+            int right=child.getLeft();
+            int bottom=child.getBottom()+params.bottomMargin;
 
-            int timeLineLeft=left+mLeftOffset/2;
-            int upTimeLineTop=top;
-            int upTimeLineBottom=top+dividerHeight/2-mCircleRadius;
-            c.drawLine(timeLineLeft,upTimeLineTop,timeLineLeft,upTimeLineBottom,mPaint);
+            int rectWidth=right-left;
 
+            int timeLineLeft=left+rectWidth/2;
+
+            //绘制圆
             int circleX=timeLineLeft;
-            int circleY=upTimeLineBottom+mCircleRadius;
-            mPaint.setStyle(Paint.Style.STROKE);
-            c.drawCircle(circleX,circleY,mCircleRadius,mPaint);
+            int circleY=top+mCircleRadius;
+            mCirclePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+            c.drawCircle(circleX,circleY,mCircleRadius,mCirclePaint);
 
-            mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-            int downTimeLineTop=circleY+mCircleRadius;
-            int downTiileLineBottom=child.getBottom();
-            c.drawLine(timeLineLeft,downTimeLineTop,timeLineLeft,downTiileLineBottom,mPaint);
-            if (mSplitLinePaint!=null){
-                c.drawRect(child.getLeft(),top,parent.getRight()-parent.getPaddingRight(),child.getTop(),mSplitLinePaint);
+            //绘制下半的线
+            if (!isLastItem(parent,child)){
+                int downTimeLineTop=circleY+mCircleRadius;
+                int downTimeLineBottom=bottom;
+                c.drawLine(timeLineLeft, downTimeLineTop, timeLineLeft, downTimeLineBottom, mlinePaint);
             }
 
+            if (isLastItem(parent,child)&&mLastLineVisibility){
+                int downTimeLineTop=circleY+mCircleRadius;
+                int downTimeLineBottom=bottom;
+                c.drawLine(timeLineLeft, downTimeLineTop, timeLineLeft, downTimeLineBottom, mlinePaint);
+            }
         }
+    }
+
+    //是否是最后一个item
+    private boolean isLastItem(RecyclerView parent, View child) {
+        return parent.getAdapter().getItemCount()==parent.getChildAdapterPosition(child)+1;
     }
 }
