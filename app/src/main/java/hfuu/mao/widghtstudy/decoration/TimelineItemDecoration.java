@@ -1,17 +1,20 @@
-package hfuu.mao.widghtstudy.decoration;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
 import android.graphics.Paint;
+import android.graphics.PathEffect;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 /**
+ * 创建日期:2019/8/5
  * 创建者: mao
  * 功能描述:RecyclerView item装饰器 时间轴效果
  */
+
 public class TimelineDecoration extends RecyclerView.ItemDecoration {
 
     private int mLeftOffset;
@@ -22,7 +25,7 @@ public class TimelineDecoration extends RecyclerView.ItemDecoration {
     private boolean mLastLineVisibility=false;
 
     public TimelineDecoration(){
-        this(90,10);
+        this(50,10);
     }
     public TimelineDecoration(int leftOffset,int circleRadius){
         mLeftOffset=leftOffset;
@@ -38,7 +41,7 @@ public class TimelineDecoration extends RecyclerView.ItemDecoration {
         mlinePaint.setStyle(Paint.Style.STROKE);
         mlinePaint.setColor(Color.BLACK);
         mlinePaint.setStrokeWidth(1);
-        PathEffect path = new DashPathEffect(new float[] { 6, 2}, 1);
+        PathEffect path = new DashPathEffect(new float[] { 16, 2}, 1);
         mlinePaint.setPathEffect(path);
     }
 
@@ -46,7 +49,7 @@ public class TimelineDecoration extends RecyclerView.ItemDecoration {
     private void initCirclePaint() {
         mCirclePaint=new Paint();
         mCirclePaint.setAntiAlias(true);
-        mCirclePaint.setColor(Color.RED);
+        mCirclePaint.setColor(Color.BLUE);
     }
 
     //设置绘制线条的画笔的颜色
@@ -79,7 +82,6 @@ public class TimelineDecoration extends RecyclerView.ItemDecoration {
         outRect.left=mLeftOffset;
     }
 
-
     @Override
     public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
         super.onDraw(c, parent, state);
@@ -89,10 +91,9 @@ public class TimelineDecoration extends RecyclerView.ItemDecoration {
             RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
 
             int left=parent.getPaddingLeft();
-            int top=child.getTop()-params.topMargin;
+            int top=child.getTop()+child.getPaddingTop();
             int right=child.getLeft();
-            int bottom=child.getBottom()+params.bottomMargin;
-
+            int bottom=child.getBottom()+params.bottomMargin+child.getPaddingTop();
             int rectWidth=right-left;
 
             int timeLineLeft=left+rectWidth/2;
@@ -106,7 +107,7 @@ public class TimelineDecoration extends RecyclerView.ItemDecoration {
             //绘制下半的线
             if (!isLastItem(parent,child)){
                 int downTimeLineTop=circleY+mCircleRadius;
-                int downTimeLineBottom=bottom;
+                int downTimeLineBottom=bottom+params.topMargin;
                 c.drawLine(timeLineLeft, downTimeLineTop, timeLineLeft, downTimeLineBottom, mlinePaint);
             }
 
